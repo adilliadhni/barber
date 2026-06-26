@@ -1,0 +1,25 @@
+{
+  "short_name": "TopBarber",
+  "name": "Top Barber Modern Barbershop",
+  "description": "Layanan potong rambut pria modern terbaik di kota Anda.",
+  "icons": [
+    {
+      "src": "/pwa-icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/pwa-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#0f172a",
+  "theme_color": "#1e40af",
+  "display": "standalone",
+  "orientation": "portrait",
+  "scope": "/"
+}

@@ -69,20 +69,20 @@ export default function ManageBarbers() {
 
   return (
     <div className="space-y-8">
-      <header className="flex justify-between items-center">
+      <header className="flex flex-col sm:flex-row gap-4 justify-between sm:items-center">
         <div>
-          <h1 className="text-4xl text-slate-900 mb-2 tracking-tight font-serif">Manage Barbers</h1>
+          <h1 className="text-3xl md:text-4xl text-slate-900 mb-2 tracking-tight font-serif">Manage Barbers</h1>
           <p className="text-slate-500 font-medium">Tim Barber profesional Anda.</p>
         </div>
         <button
           onClick={() => openModal()}
-          className="flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-2xl font-bold hover:bg-primary-dark transition-all shadow-lg shadow-primary/20"
+          className="flex items-center justify-center gap-2 bg-primary text-white px-6 py-3.5 rounded-2xl font-bold hover:bg-primary-dark transition-all shadow-lg shadow-primary/20 w-full sm:w-auto"
         >
           <Plus size={20} /> Add Barber
         </button>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8">
         {barbers.map((barber) => (
           <motion.div
             layout
@@ -99,10 +99,11 @@ export default function ManageBarbers() {
               <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent" />
             </div>
 
-            <div className="absolute top-4 right-4 translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all flex flex-col gap-2">
+            <div className="absolute top-4 right-4 translate-y-0 lg:translate-y-2 opacity-100 lg:opacity-0 lg:group-hover:translate-y-0 lg:group-hover:opacity-100 transition-all flex flex-col gap-2 z-10">
               <button
                 onClick={() => openModal(barber)}
-                className="p-3 bg-white text-primary rounded-full shadow-2xl hover:bg-slate-100 transition-colors"
+                className="p-3 bg-white text-primary rounded-full shadow-2xl hover:bg-slate-100 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center cursor-pointer"
+                title="Edit Barber"
               >
                 <Edit2 size={18} />
               </button>
@@ -116,7 +117,8 @@ export default function ManageBarbers() {
                     }
                   }
                 }}
-                className="p-3 bg-red-500 text-white rounded-full shadow-2xl hover:bg-red-600 transition-colors"
+                className="p-3 bg-red-500 text-white rounded-full shadow-2xl hover:bg-red-600 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center cursor-pointer"
+                title="Delete Barber"
               >
                 <Trash2 size={18} />
               </button>
@@ -153,10 +155,10 @@ export default function ManageBarbers() {
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative bg-white border border-slate-100 w-full max-w-lg rounded-[3rem] p-10 shadow-2xl"
+              className="relative bg-white border border-slate-100 w-full max-w-lg rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-10 shadow-2xl"
             >
-              <div className="flex justify-between items-center mb-8">
-                <h2 className="text-2xl text-slate-900 font-bold font-serif tracking-tight">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl sm:text-2xl text-slate-900 font-bold font-serif tracking-tight">
                   {editingBarber ? 'Edit Barber' : 'Add New Barber'}
                 </h2>
                 <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-900 transition-colors"><X size={24} /></button>
@@ -193,7 +195,7 @@ export default function ManageBarbers() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-slate-500 uppercase tracking-widest px-1">Rating</label>
                     <input
@@ -232,7 +234,7 @@ export default function ManageBarbers() {
                   </div>
                 </div>
 
-                <div className="pt-6">
+                <div className="pt-4">
                   <button
                     type="submit"
                     className="w-full bg-primary text-white py-4 rounded-2xl font-bold text-lg hover:bg-primary-dark transition-all shadow-lg shadow-primary/20 active:scale-95"

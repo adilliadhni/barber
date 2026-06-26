@@ -63,27 +63,27 @@ export default function ManageFinances() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col sm:flex-row gap-4 justify-between sm:items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Keuangan</h1>
-          <p className="text-slate-500">Pencatatan pemasukan dan pengeluaran</p>
+          <h1 className="text-3xl font-serif text-slate-900 mb-2">Keuangan</h1>
+          <p className="text-slate-500 font-medium">Pencatatan pemasukan dan pengeluaran</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap sm:flex-nowrap gap-2 sm:gap-3 w-full sm:w-auto">
           <button
             onClick={exportToExcel}
-            className="bg-green-600 text-white px-4 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-green-700 transition-all shadow-lg shadow-green-600/20"
+            className="flex-1 sm:flex-none justify-center bg-green-600 text-white px-4 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-green-700 transition-all shadow-lg shadow-green-600/20 text-xs sm:text-sm cursor-pointer"
           >
             Export Excel
           </button>
           <button
             onClick={exportToPDF}
-            className="bg-red-600 text-white px-4 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-red-700 transition-all shadow-lg shadow-red-600/20"
+            className="flex-1 sm:flex-none justify-center bg-red-600 text-white px-4 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-red-700 transition-all shadow-lg shadow-red-600/20 text-xs sm:text-sm cursor-pointer"
           >
             Export PDF
           </button>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="bg-primary text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-primary-dark transition-all shadow-lg shadow-primary/20"
+            className="w-full sm:w-auto justify-center bg-primary text-white px-6 py-3.5 rounded-2xl font-bold flex items-center gap-2 hover:bg-primary-dark transition-all shadow-lg shadow-primary/20 text-xs sm:text-sm cursor-pointer"
           >
             <Plus size={20} />
             Catat Transaksi
@@ -125,7 +125,8 @@ export default function ManageFinances() {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+      {/* Desktop Table View (Layar Komputer) */}
+      <div className="hidden md:block bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         <div className="p-6 border-b border-slate-100">
           <h2 className="text-xl font-bold text-slate-900">Riwayat Transaksi</h2>
         </div>
@@ -171,7 +172,7 @@ export default function ManageFinances() {
                             }
                           }
                         }}
-                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                       >
                         <Trash2 size={18} />
                       </button>
@@ -182,6 +183,62 @@ export default function ManageFinances() {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Mobile Card List (Tampilan HP) */}
+      <div className="md:hidden space-y-4">
+        <h2 className="text-lg font-bold text-slate-900 px-1">Riwayat Transaksi</h2>
+        {finances.length === 0 ? (
+          <div className="bg-white p-8 text-center text-slate-400 italic rounded-2xl border border-slate-200">
+            Belum ada catatan transaksi.
+          </div>
+        ) : (
+          finances.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((record) => (
+            <div 
+              key={record.id} 
+              className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-4"
+            >
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-bold text-slate-400">{record.date}</span>
+                <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                  record.type === 'income' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                }`}>
+                  {record.type === 'income' ? 'Pemasukan' : 'Pengeluaran'}
+                </span>
+              </div>
+              
+              <div className="space-y-1">
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Deskripsi</p>
+                <p className="text-slate-700 text-sm font-semibold">{record.description}</p>
+              </div>
+
+              <div className="flex justify-between items-center pt-3 border-t border-slate-100">
+                <div>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Jumlah</p>
+                  <p className={`text-base font-bold ${record.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
+                    {record.type === 'income' ? '+' : '-'} Rp {record.amount.toLocaleString('id-ID')}
+                  </p>
+                </div>
+                
+                <button
+                  onClick={async () => {
+                    if (window.confirm('Yakin ingin menghapus transaksi ini?')) {
+                      try {
+                        await deleteFinance(record.id);
+                      } catch (err: any) {
+                        alert("Gagal menghapus: " + err.message);
+                      }
+                    }
+                  }}
+                  className="p-3 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all border border-red-100 min-w-[44px] min-h-[44px] flex items-center justify-center cursor-pointer"
+                  title="Hapus Transaksi"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       <AnimatePresence>

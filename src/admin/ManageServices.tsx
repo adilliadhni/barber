@@ -54,14 +54,14 @@ export default function ManageServices() {
 
   return (
     <div className="space-y-8">
-      <header className="flex justify-between items-center">
+      <header className="flex flex-col sm:flex-row gap-4 justify-between sm:items-center">
         <div>
-          <h1 className="text-4xl text-slate-900 mb-2 tracking-tight font-serif">Manage Services</h1>
+          <h1 className="text-3xl md:text-4xl text-slate-900 mb-2 tracking-tight font-serif">Manage Services</h1>
           <p className="text-slate-500 font-medium">Tambah atau edit daftar layanan barbershop.</p>
         </div>
         <button
           onClick={() => openModal()}
-          className="flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-2xl font-bold hover:bg-primary-dark transition-all shadow-lg shadow-primary/20"
+          className="flex items-center justify-center gap-2 bg-primary text-white px-6 py-3.5 rounded-2xl font-bold hover:bg-primary-dark transition-all shadow-lg shadow-primary/20 w-full sm:w-auto"
         >
           <Plus size={20} /> Add Service
         </button>
@@ -78,10 +78,11 @@ export default function ManageServices() {
               <div className="p-3 bg-slate-50 rounded-2xl text-primary">
                 <Scissors size={24} />
               </div>
-              <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="flex gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all">
                 <button 
                   onClick={() => openModal(service)}
-                  className="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all border border-blue-100"
+                  className="p-3 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all border border-blue-100 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                  title="Edit Service"
                 >
                   <Edit2 size={16} />
                 </button>
@@ -95,7 +96,8 @@ export default function ManageServices() {
                       }
                     }
                   }}
-                  className="p-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all border border-red-100"
+                  className="p-3 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all border border-red-100 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                  title="Delete Service"
                 >
                   <Trash2 size={16} />
                 </button>
@@ -135,16 +137,16 @@ export default function ManageServices() {
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative bg-white border border-slate-100 w-full max-w-xl rounded-[2.5rem] p-8 shadow-2xl"
+              className="relative bg-white border border-slate-100 w-full max-w-xl rounded-[2rem] sm:rounded-[2.5rem] p-6 sm:p-8 shadow-2xl"
             >
-              <div className="flex justify-between items-center mb-8">
-                <h2 className="text-2xl text-slate-900 font-bold font-serif">{editingService ? 'Edit Service' : 'Add New Service'}</h2>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl sm:text-2xl text-slate-900 font-bold font-serif">{editingService ? 'Edit Service' : 'Add New Service'}</h2>
                 <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-900 transition-colors"><X size={24} /></button>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="col-span-2 space-y-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                  <div className="col-span-1 sm:col-span-2 space-y-2">
                     <label className="text-xs font-bold text-slate-500 uppercase tracking-widest px-1">Service Name</label>
                     <input
                       type="text"
@@ -174,7 +176,7 @@ export default function ManageServices() {
                       onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
                     />
                   </div>
-                  <div className="col-span-2 space-y-2">
+                  <div className="col-span-1 sm:col-span-2 space-y-2">
                     <label className="text-xs font-bold text-slate-500 uppercase tracking-widest px-1">Description</label>
                     <textarea
                       required
@@ -186,17 +188,17 @@ export default function ManageServices() {
                   </div>
                 </div>
 
-                <div className="flex gap-4 pt-4">
+                <div className="flex gap-4 pt-2">
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
-                    className="flex-1 px-6 py-4 rounded-2xl font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all active:scale-95"
+                    className="flex-1 px-6 py-4 rounded-2xl font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all active:scale-95 text-sm sm:text-base"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="flex-[2] bg-primary text-white px-6 py-4 rounded-2xl font-bold hover:bg-primary-dark transition-all shadow-lg shadow-primary/20 active:scale-95"
+                    className="flex-[2] bg-primary text-white px-6 py-4 rounded-2xl font-bold hover:bg-primary-dark transition-all shadow-lg shadow-primary/20 active:scale-95 text-sm sm:text-base"
                   >
                     {editingService ? 'Update Service' : 'Create Service'}
                   </button>

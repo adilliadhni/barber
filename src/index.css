@@ -44,3 +44,22 @@
     #1e40af 80px
   );
 }
+
+/* Penataan Layout untuk Mode PWA Standalone (Aplikasi Terinstal) */
+@media (display-mode: standalone) {
+  /* Berikan padding atas pada body agar tidak tertutup notch/status bar di smartphone */
+  body {
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* Geser posisi navbar melayang agar berada di bawah status bar sistem */
+  nav {
+    top: calc(env(safe-area-inset-top, 0px) + 1rem) !important;
+  }
+
+  /* Sesuaikan posisi widget melayang agar berada di atas safe area navigasi HP */
+  .fixed.bottom-6 {
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 1.5rem) !important;
+  }
+}

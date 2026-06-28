@@ -10,6 +10,9 @@ export default function OfflineWidget() {
     localStorage.getItem('offline_assets_cached') === 'true'
   );
   const [showStatus, setShowStatus] = useState(true);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isInstalled, setIsInstalled] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
   const location = useLocation();
 
   // Monitor network status
@@ -26,9 +29,67 @@ export default function OfflineWidget() {
     };
   }, []);
 
+  // Monitor installation prompt (beforeinstallprompt)
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      // Prevent the mini-infobar from appearing on mobile
+      e.preventDefault();
+      // Stash the event so it can be triggered later.
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  // Monitor when app is successfully installed
+  useEffect(() => {
+    const handleAppInstalled = () => {
+      console.log('App was successfully installed');
+      setIsInstalled(true);
+      setDeferredPrompt(null);
+    };
+
+    window.addEventListener('appinstalled', handleAppInstalled);
+    return () => {
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
+  }, []);
+
+  // Check display-mode standalone and device model
+  useEffect(() => {
+    const checkInstallState = () => {
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+      const isIOSStandalone = (window.navigator as any).standalone === true;
+      setIsInstalled(isStandalone || isIOSStandalone);
+    };
+
+    checkInstallState();
+
+    const mediaQuery = window.matchMedia('(display-mode: standalone)');
+    const handleMediaChange = (e: MediaQueryListEvent) => {
+      setIsInstalled(e.matches);
+    };
+
+    mediaQuery.addEventListener('change', handleMediaChange);
+
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    setIsIOS(/iphone|ipad|ipod/.test(userAgent));
+
+    return () => {
+      mediaQuery.removeEventListener('change', handleMediaChange);
+    };
+  }, []);
+
   // Jangan tampilkan widget di halaman admin agar tidak mengganggu layout dashboard
   const isAdminPath = location.pathname.startsWith('/admin');
   if (isAdminPath) return null;
+
+  // Jika aplikasi dibuka sebagai standalone (aplikasi terinstal) dan jaringan online, sembunyikan widget agar tampilan bersih seperti aplikasi native
+  if (isInstalled && isOnline) return null;
 
   const handleDownloadOffline = async () => {
     setIsDownloading(true);
@@ -72,6 +133,14 @@ export default function OfflineWidget() {
     } finally {
       setIsDownloading(false);
     }
+  };
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    console.log(`User response to the install prompt: ${outcome}`);
+    setDeferredPrompt(null);
   };
 
   return (
@@ -118,41 +187,72 @@ export default function OfflineWidget() {
                 </span>
               </div>
 
-              {/* Aksi/Keterangan Offline */}
-              <div className="flex items-center justify-between pt-2 border-t border-white/5">
-                <p className="text-xs text-slate-300 font-medium max-w-[180px]">
-                  {isDownloaded 
-                    ? 'Aplikasi siap diakses tanpa internet.' 
-                    : 'Simpan halaman web agar bisa dibuka saat offline.'}
-                </p>
+              {/* Aksi/Keterangan Offline & Instal */}
+              <div className="flex flex-col gap-3 pt-2 border-t border-white/5">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-xs text-slate-300 font-medium flex-1">
+                    {isInstalled 
+                      ? 'Aplikasi terpasang di perangkat Anda.' 
+                      : isDownloaded 
+                        ? 'Siap diakses offline. Pasang aplikasinya?' 
+                        : 'Simpan offline & instal aplikasi.'}
+                  </p>
 
-                {isOnline && (
-                  <button
-                    onClick={handleDownloadOffline}
-                    disabled={isDownloading || isDownloaded}
-                    className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer ${
-                      isDownloaded 
-                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
-                        : 'bg-primary text-white hover:bg-primary-dark shadow-md shadow-primary/20'
-                    }`}
-                  >
-                    {isDownloading ? (
-                      <>
-                        <RefreshCw size={12} className="animate-spin" />
-                        <span>Proses...</span>
-                      </>
-                    ) : isDownloaded ? (
-                      <>
-                        <Check size={12} />
-                        <span>Tersimpan</span>
-                      </>
-                    ) : (
-                      <>
-                        <Download size={12} />
-                        <span>Simpan Offline</span>
-                      </>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {isOnline && (
+                      <button
+                        onClick={handleDownloadOffline}
+                        disabled={isDownloading || isDownloaded}
+                        className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer ${
+                          isDownloaded 
+                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
+                            : 'bg-primary text-white hover:bg-primary-dark shadow-md shadow-primary/20'
+                        }`}
+                      >
+                        {isDownloading ? (
+                          <>
+                            <RefreshCw size={12} className="animate-spin" />
+                            <span>Proses...</span>
+                          </>
+                        ) : isDownloaded ? (
+                          <>
+                            <Check size={12} />
+                            <span>Tersimpan</span>
+                          </>
+                        ) : (
+                          <>
+                            <Download size={12} />
+                            <span>Offline</span>
+                          </>
+                        )}
+                      </button>
                     )}
-                  </button>
+
+                    {!isInstalled && deferredPrompt && (
+                      <button
+                        onClick={handleInstallClick}
+                        className="px-3 py-2 bg-white text-slate-900 hover:bg-slate-100 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95 shadow-md cursor-pointer"
+                      >
+                        <Download size={12} />
+                        <span>Instal</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Info iOS Safari */}
+                {!isInstalled && isIOS && (
+                  <p className="text-[10px] text-slate-300 bg-white/5 p-2 rounded-xl border border-white/5 italic">
+                    💡 <strong>Khusus iOS (Safari):</strong> Ketuk tombol <strong>"Bagikan"</strong> (Share) <span className="inline-block text-xs">📤</span> lalu pilih <strong>"Tambah ke Layar Utama"</strong>.
+                  </p>
+                )}
+
+                {/* Status PWA Terinstal */}
+                {isInstalled && (
+                  <div className="flex items-center gap-1.5 text-[10px] text-emerald-400 font-bold uppercase tracking-wider">
+                    <Check size={10} />
+                    <span>Aplikasi Terpasang (Standalone)</span>
+                  </div>
                 )}
               </div>
             </div>
@@ -162,3 +262,4 @@ export default function OfflineWidget() {
     </AnimatePresence>
   );
 }
+

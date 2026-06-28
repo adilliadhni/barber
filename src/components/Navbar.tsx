@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, User, Download, RefreshCw } from 'lucide-react';
+import { Menu, X, User, Download, RefreshCw, Check } from 'lucide-react';
 import { useBarber } from '../context/BarberContext';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -9,66 +9,77 @@ export default function Navbar() {
   const { user, logout } = useBarber();
   const location = useLocation();
 
-  // PWA Offline states
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [isDownloading, setIsDownloading] = useState(false);
-  const [isDownloaded, setIsDownloaded] = useState(
-    localStorage.getItem('offline_assets_cached') === 'true'
-  );
+  // PWA Installation & Device states
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isInstalled, setIsInstalled] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
 
+  // Monitor installation prompt (beforeinstallprompt)
   useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
 
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
   }, []);
 
-  const handleDownloadOffline = async (e: React.MouseEvent) => {
+  // Monitor when app is successfully installed
+  useEffect(() => {
+    const handleAppInstalled = () => {
+      setIsInstalled(true);
+      setDeferredPrompt(null);
+    };
+
+    window.addEventListener('appinstalled', handleAppInstalled);
+    return () => {
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
+  }, []);
+
+  // Check display-mode standalone and device model
+  useEffect(() => {
+    const checkInstallState = () => {
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+      const isIOSStandalone = (window.navigator as any).standalone === true;
+      setIsInstalled(isStandalone || isIOSStandalone);
+    };
+
+    checkInstallState();
+
+    const mediaQuery = window.matchMedia('(display-mode: standalone)');
+    const handleMediaChange = (e: MediaQueryListEvent) => {
+      setIsInstalled(e.matches);
+    };
+
+    mediaQuery.addEventListener('change', handleMediaChange);
+
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    setIsIOS(/iphone|ipad|ipod/.test(userAgent));
+
+    return () => {
+      mediaQuery.removeEventListener('change', handleMediaChange);
+    };
+  }, []);
+
+  const handleInstallClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (isDownloading || isDownloaded || !isOnline) return;
-
-    setIsDownloading(true);
-    const routesToCache = [
-      '/',
-      '/services',
-      '/booking',
-      '/contact',
-      '/about',
-      '/index.html',
-      '/pwa-icon.png',
-      '/assets/logo.PNG'
-    ];
-
-    try {
-      if ('caches' in window) {
-        const cache = await caches.open('topbarber-cache-v1');
-        await Promise.all(
-          routesToCache.map(async (route) => {
-            try {
-              const response = await fetch(route);
-              if (response.ok) {
-                await cache.put(route, response);
-              }
-            } catch (err) {
-              console.warn(`Gagal mem-cache rute: ${route}`, err);
-            }
-          })
-        );
-        localStorage.setItem('offline_assets_cached', 'true');
-        setIsDownloaded(true);
-      }
-    } catch (error) {
-      console.error('Gagal mengunduh aset offline:', error);
-    } finally {
-      setIsDownloading(false);
+    if (isIOS) {
+      alert("💡 Khusus iOS (Safari):\nKetuk tombol 'Bagikan' (Share) 📤 di browser Anda, lalu pilih 'Tambah ke Layar Utama' (Add to Home Screen) untuk memasang aplikasi ini.");
+      return;
     }
+    if (!deferredPrompt) {
+      alert("Browser Anda belum mendeteksi kesiapan instalasi, atau aplikasi sudah terpasang.");
+      return;
+    }
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    console.log(`User response to the install prompt: ${outcome}`);
+    setDeferredPrompt(null);
   };
 
   const navLinks = [
@@ -121,41 +132,23 @@ export default function Navbar() {
               );
             })}
 
-            {/* Offline/Online Status Capsule (Desktop) */}
-            <button
-              onClick={handleDownloadOffline}
-              disabled={isDownloading || !isOnline}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold border transition-all active:scale-95 cursor-pointer ${
-                !isOnline
-                  ? 'bg-red-500/10 text-red-500 border-red-500/20'
-                  : isDownloaded
-                  ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
-                  : 'bg-white/80 text-slate-600 border-slate-200/50 hover:bg-slate-50'
-              }`}
-              title={
-                !isOnline
-                  ? 'Koneksi terputus (Offline)'
-                  : isDownloaded
-                  ? 'Aplikasi siap diakses offline'
-                  : 'Klik untuk simpan data offline'
-              }
-            >
-              <span className={`h-1.5 w-1.5 rounded-full ${
-                !isOnline ? 'bg-red-500 animate-pulse' : isDownloaded ? 'bg-emerald-500' : 'bg-slate-400'
-              }`} />
-              {isDownloading ? (
-                <RefreshCw size={10} className="animate-spin text-slate-500" />
-              ) : !isOnline ? (
-                <span>Offline</span>
-              ) : isDownloaded ? (
-                <span>Siap Offline</span>
-              ) : (
-                <span className="flex items-center gap-1">
-                  <Download size={10} />
-                  Simpan Offline
-                </span>
-              )}
-            </button>
+            {/* PWA Install Button (Desktop) */}
+            {!isInstalled && (deferredPrompt || isIOS) && (
+              <button
+                onClick={handleInstallClick}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold border transition-all active:scale-95 cursor-pointer bg-primary text-white border-primary/20 hover:bg-primary-dark shadow-sm"
+                title="Pasang Aplikasi di Desktop / HP"
+              >
+                <Download size={10} />
+                <span>Instal Aplikasi</span>
+              </button>
+            )}
+            {isInstalled && (
+              <div className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[10px] font-bold border bg-emerald-500/10 text-emerald-500 border-emerald-500/20">
+                <Check size={10} />
+                <span>Aplikasi Terpasang</span>
+              </div>
+            )}
 
             {user ? (
               <div className="flex items-center gap-4 pl-4 border-l border-slate-200">
@@ -178,31 +171,22 @@ export default function Navbar() {
 
           {/* Mobile menu button and Status */}
           <div className="md:hidden flex items-center gap-3">
-            {/* Offline/Online Status Capsule (Mobile) */}
-            <button
-              onClick={handleDownloadOffline}
-              disabled={isDownloading || !isOnline}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[9px] font-bold border transition-all active:scale-95 ${
-                !isOnline
-                  ? 'bg-red-500/10 text-red-500 border-red-500/20'
-                  : isDownloaded
-                  ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
-                  : 'bg-white/80 text-slate-600 border-slate-200/50'
-              }`}
-            >
-              <span className={`h-1.5 w-1.5 rounded-full ${
-                !isOnline ? 'bg-red-500 animate-pulse' : isDownloaded ? 'bg-emerald-500' : 'bg-slate-400'
-              }`} />
-              {isDownloading ? (
-                <RefreshCw size={8} className="animate-spin" />
-              ) : !isOnline ? (
-                <span>Offline</span>
-              ) : isDownloaded ? (
-                <span>Ready</span>
-              ) : (
-                <span>Unduh</span>
-              )}
-            </button>
+            {/* PWA Install Button (Mobile) */}
+            {!isInstalled && (deferredPrompt || isIOS) && (
+              <button
+                onClick={handleInstallClick}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[9px] font-bold border transition-all active:scale-95 bg-primary text-white border-primary/20 hover:bg-primary-dark"
+              >
+                <Download size={8} />
+                <span>Instal</span>
+              </button>
+            )}
+            {isInstalled && (
+              <div className="flex items-center gap-0.5 px-2.5 py-1.5 rounded-full text-[9px] font-bold border bg-emerald-500/10 text-emerald-500 border-emerald-500/20">
+                <Check size={8} />
+                <span>Terpasang</span>
+              </div>
+            )}
 
             <button
               onClick={() => setIsOpen(!isOpen)}
